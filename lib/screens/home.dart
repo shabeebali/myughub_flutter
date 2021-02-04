@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'baseConfig.dart';
+import '../baseConfig.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 
@@ -10,6 +10,18 @@ class MyHomePage extends StatelessWidget {
     var jwt = await storage.read(key: "jwt");
     return await http.read(
       '$SERVER_IP/api/user',
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Accept': 'application/json; charset=UTF-8',
+        HttpHeaders.authorizationHeader: "Bearer $jwt"
+      },
+    );
+  }
+
+  Future<String> get sendMail async {
+    var jwt = await storage.read(key: "jwt");
+    return await http.read(
+      '$SERVER_IP/api/mail',
       headers: {
         'Content-Type': 'application/json; charset=UTF-8',
         'Accept': 'application/json; charset=UTF-8',
@@ -39,17 +51,18 @@ class MyHomePage extends StatelessWidget {
                   ? ListView(
                       padding: const EdgeInsets.all(8),
                       children: <Widget>[
-                        Container(
-                          height: 600,
-                          color: Colors.amber[600],
-                          child: Text("  here's the data:"),
-                        ),
-                        Container(
-                            color: Colors.amber[500],
-                            child: Text(snapshot.data,
-                                style: Theme.of(context).textTheme.headline6)),
-                      ],
-                    )
+                          FlatButton(
+                            onPressed: () async {
+                              var response = await sendMail;
+                              if (response != null) {
+                                Scaffold.of(context).showSnackBar(SnackBar(
+                                  content: Text(response),
+                                ));
+                              }
+                            },
+                            child: Text("Send Email"),
+                          )
+                        ])
                   : snapshot.hasError
                       ? Text("An error occurred")
                       : CircularProgressIndicator()),

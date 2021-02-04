@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 // import 'init.dart';
 import 'splash.dart';
-import 'home.dart';
+import 'screens/home.dart';
 import 'baseConfig.dart';
-import 'login.dart';
+import 'screens/auth/login.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
-import 'settings_page.dart';
+import 'screens/settings_page.dart';
+import 'screens/auth/register.dart';
 
 void main() => runApp(MyApp());
 
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
         '/login': (BuildContext context) => new LoginPage(),
         '/dashboard': (BuildContext context) => new MyHomePage(),
         '/settings': (BuildContext context) => new SettingsPage(),
+        '/register': (BuildContext context) => new RegisterPage(),
       },
     );
   }

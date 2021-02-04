@@ -2,9 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'baseConfig.dart';
+import '../../baseConfig.dart';
 import 'package:http/http.dart' as http;
-import 'home.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -179,44 +178,21 @@ class _LoginPageState extends State<LoginPage> {
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
-                              TextSpan(
-                                text: 'Sign Up',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14.0,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                recognizer: TapGestureRecognizer()
-                                  ..onTap = () async {
-                                    var email = _emailController.text;
-                                    var password = _passwordController.text;
-
-                                    if (email.length < 4)
-                                      displayDialog(context, "Invalid Username",
-                                          "The username should be at least 4 characters long");
-                                    else if (password.length < 4)
-                                      displayDialog(context, "Invalid Password",
-                                          "The password should be at least 4 characters long");
-                                    else {
-                                      var res =
-                                          await attemptSignUp(email, password);
-                                      if (res == 201)
-                                        displayDialog(context, "Success",
-                                            "The user was created. Log in now.");
-                                      else if (res == 409)
-                                        displayDialog(
-                                            context,
-                                            "That username is already registered",
-                                            "Please try to sign up using another username or log in if you already have an account.");
-                                      else {
-                                        displayDialog(context, "Error",
-                                            "An unknown error occurred.");
-                                      }
-                                    }
-                                  },
-                              ),
                             ],
                           ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          Navigator.of(context).pushNamed('/register');
+                        },
+                        style: TextButton.styleFrom(
+                          primary: Colors.white,
+                          padding: EdgeInsets.symmetric(horizontal: 75.0),
+                        ),
+                        child: Text(
+                          'Sign Up',
+                          style: TextStyle(fontSize: 16.0),
                         ),
                       )
                     ]),
