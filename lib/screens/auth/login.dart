@@ -148,7 +148,8 @@ class _LoginPageState extends State<LoginPage> {
                                 storage.write(key: "jwt", value: jwt);
                                 Navigator.of(context).pushNamedAndRemoveUntil(
                                     '/dashboard',
-                                    (Route<dynamic> route) => false);
+                                    (Route<dynamic> route) => false,
+                                    arguments: {"newUser": true});
 
                                 /*
                           Navigator.push(

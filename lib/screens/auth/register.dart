@@ -4,8 +4,8 @@ import '../../baseConfig.dart';
 import 'package:http/http.dart' as http;
 import 'package:email_validator/email_validator.dart';
 import '../../loadingIndicator.dart';
-import 'package:otp_text_field/otp_field.dart';
-import 'package:otp_text_field/style.dart';
+import 'package:pinput/pin_put/pin_put.dart';
+import 'package:timer_button/timer_button.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -18,6 +18,16 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  final FocusNode _pinPutFocusNode = FocusNode();
+  final TextEditingController _pinPutController = TextEditingController();
+  BoxDecoration get _pinPutDecoration {
+    return BoxDecoration(
+      border: Border.all(color: Colors.deepPurpleAccent),
+      borderRadius: BorderRadius.circular(15.0),
+    );
+  }
+
   bool _obscureText = true;
   void _toggle() {
     setState(() {
@@ -45,11 +55,13 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<String> sendMail(String email) async {
-    await Future.delayed(Duration(seconds: 1));
-    return 'yes';
     /*
+      await Future.delayed(Duration(seconds: 1));
+      return 'yes';
+      */
+
     var res = await http.post(
-      "$SERVER_IP/api/email_validation",
+      "$SERVER_IP/api/email_otp",
       body: jsonEncode(<String, String>{
         "email": email,
       }),
@@ -58,11 +70,47 @@ class _RegisterPageState extends State<RegisterPage> {
         'Accept': 'application/json; charset=UTF-8'
       },
     );
-    print(res.body);
     if (res.statusCode == 200) {
       return res.body;
     }
-    return null;*/
+    return null;
+  }
+
+  Future<String> registerUser(
+      String email, String password, String firstname, String lastname) async {
+    var res = await http.post(
+      "$SERVER_IP/api/register",
+      body: jsonEncode(<String, String>{
+        "email": email,
+        "password": password,
+        "fisrtname": firstname,
+        "lastname": lastname,
+        "device_name": "Android",
+      }),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Accept': 'application/json; charset=UTF-8'
+      },
+    );
+    if (res.statusCode == 200) {
+      return res.body;
+    }
+    return null;
+  }
+
+  Future<String> verifyOtp(String email, String otp) async {
+    var res = await http.post(
+      "$SERVER_IP/api/email_otp_verification",
+      body: jsonEncode(<String, String>{"email": email, "otp": otp}),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Accept': 'application/json; charset=UTF-8'
+      },
+    );
+    if (res.statusCode == 200) {
+      return res.body;
+    }
+    return null;
   }
 
   void showLoadingIndicator([String text]) {
@@ -81,9 +129,152 @@ class _RegisterPageState extends State<RegisterPage> {
         });
   }
 
+  showAlertDialog(BuildContext context, String title, String msg) {
+    // set up the button
+    Widget okButton = FlatButton(
+      child: Text("OK"),
+      onPressed: () {
+        Navigator.pop(context);
+      },
+    );
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text(title),
+      content: Text(msg),
+      actions: [
+        okButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
+  _resentOtp(context) {
+    Navigator.pop(context);
+    showOtpBottomSheet(context);
+  }
+
+  showOtpBottomSheet(context) async {
+    FocusScope.of(context).unfocus();
+    var email = _emailController.text;
+    if (_formKey.currentState.validate()) {
+      DialogBuilder(context).showLoadingIndicator('');
+      var res = await sendMail(email);
+      if (res != null) {
+        DialogBuilder(context).hideOpenDialog();
+        Map<String, dynamic> data = jsonDecode(res);
+        if (data['status'] == 'EMAIL_SENT') {
+          // print('email sent successfully');
+          FocusScope.of(context).unfocus();
+          showModalBottomSheet<void>(
+            context: context,
+            isDismissible: true,
+            isScrollControlled: true,
+            builder: (BuildContext context) {
+              return Padding(
+                  padding: MediaQuery.of(context).viewInsets,
+                  child: Container(
+                    padding: EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                            'An OTP has been sent to ${_emailController.text}. Please enter OTP below.'),
+                        SizedBox(
+                          height: 16.0,
+                        ),
+                        Text(
+                          'Note: Please check your email inbox as well as spam folder !!',
+                          style: TextStyle(color: Colors.amber.shade900),
+                        ),
+                        Center(
+                          child: PinPut(
+                            fieldsCount: 4,
+                            onSubmit: (String otp) async {
+                              DialogBuilder(context)
+                                  .showLoadingIndicator('Verifying OTP');
+                              var res2 = await verifyOtp(email, otp);
+                              if (res2 != null) {
+                                DialogBuilder(context).hideOpenDialog();
+                                Map<String, dynamic> data2 = jsonDecode(res2);
+                                if (data2['status'] == 'OTP_VERIFIED') {
+                                  DialogBuilder(context)
+                                      .showLoadingIndicator('');
+                                  var password = _passwordController.text;
+                                  var firstname = _firstnameController.text;
+                                  var lastname = _lastnameController.text;
+                                  var res3 = await registerUser(
+                                      email, password, firstname, lastname);
+                                  if (res3 != null) {
+                                    Map<String, dynamic> data3 =
+                                        jsonDecode(res3);
+                                    if (data3['message'] == 'success') {
+                                      Navigator.of(context)
+                                          .pushNamedAndRemoveUntil('/dashboard',
+                                              (Route<dynamic> route) => false,
+                                              arguments: {"newUser": true});
+                                    }
+                                  }
+                                } else if (data2['status'] == 'INCORRECT_OTP') {
+                                  _pinPutController.text = '';
+                                  showAlertDialog(context, 'Alert',
+                                      'Incorrect OTP. Try Again');
+                                }
+                              }
+                            },
+                            focusNode: _pinPutFocusNode,
+                            controller: _pinPutController,
+                            submittedFieldDecoration:
+                                _pinPutDecoration.copyWith(
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            selectedFieldDecoration: _pinPutDecoration,
+                            followingFieldDecoration:
+                                _pinPutDecoration.copyWith(
+                              borderRadius: BorderRadius.circular(5.0),
+                              border: Border.all(
+                                color: Colors.deepPurpleAccent.withOpacity(.5),
+                              ),
+                            ),
+                          ),
+                        ),
+                        TimerButton(
+                          label: "Resend OTP",
+                          timeOutInSeconds: 30,
+                          onPressed: () {
+                            _resentOtp(context);
+                          },
+                          buttonType: ButtonType.FlatButton,
+                          color: Colors.white,
+                          activeTextStyle:
+                              TextStyle(color: Colors.blue.shade700),
+                        )
+                      ],
+                    ),
+                  ));
+            },
+          );
+        } else if (data['status'] == 'EMAIL_EXISTS') {
+          Scaffold.of(context).showSnackBar(SnackBar(
+            content: Text(data['message']),
+          ));
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        key: _scaffoldKey,
         appBar: AppBar(
           title: Text('Create an account'),
           backgroundColor: Colors.cyan,
@@ -91,14 +282,13 @@ class _RegisterPageState extends State<RegisterPage> {
         body: Builder(builder: (BuildContext context) {
           return SingleChildScrollView(
               child: Form(
-            autovalidateMode: AutovalidateMode.onUserInteraction,
             key: _formKey,
             child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
                   children: [
                     TextFormField(
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      autovalidateMode: AutovalidateMode.disabled,
                       decoration: InputDecoration(
                         labelText: 'First Name',
                         icon: const Padding(
@@ -110,7 +300,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       controller: _firstnameController,
                     ),
                     TextFormField(
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      autovalidateMode: AutovalidateMode.disabled,
                       decoration: InputDecoration(
                         labelText: 'Last Name',
                         icon: const Padding(
@@ -122,7 +312,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       controller: _lastnameController,
                     ),
                     TextFormField(
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      autovalidateMode: AutovalidateMode.disabled,
                       validator: (val) => !EmailValidator.validate(val, true)
                           ? 'Not a valid email.'
                           : null,
@@ -134,7 +324,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       controller: _emailController,
                     ),
                     TextFormField(
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        autovalidateMode: AutovalidateMode.disabled,
                         obscureText: _obscureText,
                         decoration: InputDecoration(
                           suffixIcon: IconButton(
@@ -157,68 +347,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       height: 16.0,
                     ),
                     ElevatedButton(
-                      onPressed: () async {
-                        FocusScope.of(context).unfocus();
-                        var email = _emailController.text;
-                        if (_formKey.currentState.validate()) {
-                          DialogBuilder(context).showLoadingIndicator('');
-                          var res = await sendMail(email);
-                          if (res != null) {
-                            DialogBuilder(context).hideOpenDialog();
-                            print('email sent successfully');
-                            FocusScope.of(context).unfocus();
-                            showModalBottomSheet<void>(
-                              context: context,
-                              isDismissible: false,
-                              isScrollControlled: true,
-                              builder: (BuildContext context) {
-                                return Padding(
-                                    padding: MediaQuery.of(context).viewInsets,
-                                    child: Container(
-                                      padding: EdgeInsets.all(16.0),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: <Widget>[
-                                          Text(
-                                              'An OTP has been sent to ${_emailController.text}. Please enter OTP below.'),
-                                          SizedBox(
-                                            height: 16.0,
-                                          ),
-                                          Text(
-                                            'Note: Please check your email inbox as well as spam folder !!',
-                                            style: TextStyle(
-                                                color: Colors.amber.shade900),
-                                          ),
-                                          Center(
-                                            child: OTPTextField(
-                                              width: MediaQuery.of(context)
-                                                  .size
-                                                  .width,
-                                              textFieldAlignment:
-                                                  MainAxisAlignment.spaceAround,
-                                              fieldWidth: 50,
-                                              fieldStyle: FieldStyle.underline,
-                                              style: TextStyle(fontSize: 17),
-                                              onCompleted: (pin) {
-                                                print("Completed: " + pin);
-                                              },
-                                            ),
-                                          ),
-                                          ElevatedButton(
-                                            child:
-                                                const Text('Close BottomSheet'),
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                          )
-                                        ],
-                                      ),
-                                    ));
-                              },
-                            );
-                          }
-                        }
+                      onPressed: () {
+                        showOtpBottomSheet(context);
                       },
                       style: ElevatedButton.styleFrom(
                         onPrimary: Colors.white,

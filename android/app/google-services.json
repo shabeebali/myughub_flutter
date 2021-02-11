@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "554414808317",
+    "firebase_url": "https://myughub-default-rtdb.firebaseio.com",
+    "project_id": "myughub",
+    "storage_bucket": "myughub.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:554414808317:android:a41ecab7e608ff604ef294",
+        "android_client_info": {
+          "package_name": "com.example.flutter_myughub"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "554414808317-ih5obfq0l0nsu1masnlmqp16g8i2fa22.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXFIQBcFQE4sGM2K2MtOGUYs9TBBu1k_g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "554414808317-ih5obfq0l0nsu1masnlmqp16g8i2fa22.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
