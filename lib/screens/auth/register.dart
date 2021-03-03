@@ -6,6 +6,7 @@ import 'package:email_validator/email_validator.dart';
 import '../../loadingIndicator.dart';
 import 'package:pinput/pin_put/pin_put.dart';
 import 'package:timer_button/timer_button.dart';
+import '../../homeScreenArguments.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -77,7 +78,9 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<String> registerUser(
-      String email, String password, String firstname, String lastname) async {
+      String email, String password, String firstname, String lastname, String otp) async {
+    print(
+        'start registration: email: $email, password: $password, firstname: $firstname, lastname: $lastname');
     var res = await http.post(
       "$SERVER_IP/api/register",
       body: jsonEncode(<String, String>{
@@ -85,23 +88,9 @@ class _RegisterPageState extends State<RegisterPage> {
         "password": password,
         "fisrtname": firstname,
         "lastname": lastname,
+        "otp": otp,
         "device_name": "Android",
       }),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Accept': 'application/json; charset=UTF-8'
-      },
-    );
-    if (res.statusCode == 200) {
-      return res.body;
-    }
-    return null;
-  }
-
-  Future<String> verifyOtp(String email, String otp) async {
-    var res = await http.post(
-      "$SERVER_IP/api/email_otp_verification",
-      body: jsonEncode(<String, String>{"email": email, "otp": otp}),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Accept': 'application/json; charset=UTF-8'
@@ -191,61 +180,49 @@ class _RegisterPageState extends State<RegisterPage> {
                         SizedBox(
                           height: 16.0,
                         ),
-                        Text(
-                          'Note: Please check your email inbox as well as spam folder !!',
-                          style: TextStyle(color: Colors.amber.shade900),
-                        ),
-                        Center(
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 20.0),
                           child: PinPut(
                             fieldsCount: 4,
                             onSubmit: (String otp) async {
                               DialogBuilder(context)
                                   .showLoadingIndicator('Verifying OTP');
-                              var res2 = await verifyOtp(email, otp);
-                              if (res2 != null) {
-                                DialogBuilder(context).hideOpenDialog();
-                                Map<String, dynamic> data2 = jsonDecode(res2);
-                                if (data2['status'] == 'OTP_VERIFIED') {
-                                  DialogBuilder(context)
-                                      .showLoadingIndicator('');
-                                  var password = _passwordController.text;
-                                  var firstname = _firstnameController.text;
-                                  var lastname = _lastnameController.text;
-                                  var res3 = await registerUser(
-                                      email, password, firstname, lastname);
-                                  if (res3 != null) {
-                                    Map<String, dynamic> data3 =
-                                        jsonDecode(res3);
-                                    if (data3['message'] == 'success') {
-                                      Navigator.of(context)
-                                          .pushNamedAndRemoveUntil('/dashboard',
-                                              (Route<dynamic> route) => false,
-                                              arguments: {"newUser": true});
-                                    }
-                                  }
-                                } else if (data2['status'] == 'INCORRECT_OTP') {
+                              var password = _passwordController.text;
+                              var firstname = _firstnameController.text;
+                              var lastname = _lastnameController.text;
+                              var res3 = await registerUser(
+                                  email, password, firstname, lastname, otp);
+                              if (res3 != null) {
+                                Map<String, dynamic> data3 =
+                                    jsonDecode(res3);
+                                if (data3['message'] == 'success') {
+                                  storage.write(
+                                      key: "jwt", value: data3['token']);
+                                  Navigator.of(context)
+                                      .pushNamedAndRemoveUntil('/dashboard',
+                                          (Route<dynamic> route) => false,
+                                          arguments:
+                                              HomeScreenArguments(true));
+                                } else if (data3['status'] == 'INCORRECT_OTP') {
+                                  DialogBuilder(context).hideOpenDialog();
                                   _pinPutController.text = '';
-                                  showAlertDialog(context, 'Alert',
-                                      'Incorrect OTP. Try Again');
+                                  showAlertDialog(context, 'Alert', 'Incorrect OTP. Try Again');
+                                } else {
+                                DialogBuilder(context).hideOpenDialog();
+                                showAlertDialog(context, 'Alert',
+                                'Something went wrong. Try Again');
                                 }
+
                               }
                             },
                             focusNode: _pinPutFocusNode,
                             controller: _pinPutController,
-                            submittedFieldDecoration:
-                                _pinPutDecoration.copyWith(
-                              borderRadius: BorderRadius.circular(20.0),
-                            ),
                             selectedFieldDecoration: _pinPutDecoration,
-                            followingFieldDecoration:
-                                _pinPutDecoration.copyWith(
-                              borderRadius: BorderRadius.circular(5.0),
-                              border: Border.all(
-                                color: Colors.deepPurpleAccent.withOpacity(.5),
-                              ),
-                            ),
+                            followingFieldDecoration: _pinPutDecoration,
+                            submittedFieldDecoration: _pinPutDecoration,
                           ),
                         ),
+
                         TimerButton(
                           label: "Resend OTP",
                           timeOutInSeconds: 30,
@@ -256,6 +233,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           color: Colors.white,
                           activeTextStyle:
                               TextStyle(color: Colors.blue.shade700),
+                        ),
+                        Text(
+                          'Note: Please check your email inbox as well as spam folder !!',
+                          style: TextStyle(color: Colors.amber.shade900),
                         )
                       ],
                     ),

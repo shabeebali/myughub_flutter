@@ -30,6 +30,8 @@ dependencies:
   email_validator: '^1.0.5'
   pinput: ^1.0.0
   timer_button: ^1.0.1
+  flutter_local_notifications: ^4.0.1
+  loading_overlay: ^0.2.1
 
 
 

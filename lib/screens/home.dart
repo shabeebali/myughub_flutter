@@ -2,117 +2,124 @@ import 'package:flutter/material.dart';
 import '../baseConfig.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
+import '../homeScreenArguments.dart';
 
 class MyHomePage extends StatefulWidget {
   // MyHomePage({Key key, this.title}) : super(key: key);
 
-  final bool newUser;
-  MyHomePage({Key key, this.newUser}) : super(key: key);
-
-  _MyHomePageState createState() => _MyHomePageState(newUser: newUser);
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final bool newUser;
-  _MyHomePageState({this.newUser});
   void initState() {
     super.initState();
-    print(newUser);
-    print('Olakka');
   }
 
-  Future<String> get getData async {
-    var jwt = await storage.read(key: "jwt");
-    // print(jwt);
-    return await http.read(
-      '$SERVER_IP/api/user',
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Accept': 'application/json; charset=UTF-8',
-        HttpHeaders.authorizationHeader: "Bearer $jwt"
-      },
-    );
-  }
-
-  Future<String> get sendMail async {
-    var jwt = await storage.read(key: "jwt");
-    return await http.read(
-      '$SERVER_IP/api/mail',
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Accept': 'application/json; charset=UTF-8',
-        HttpHeaders.authorizationHeader: "Bearer $jwt"
-      },
-    );
-  }
-
-  Widget build(BuildContext context) => MaterialApp(
-      title: 'Home',
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text(newUser == true ? "EduWay" : "Old Eduway"),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.more_vert),
-              onPressed: () {
-                Navigator.of(context).pushNamed('/settings');
-              },
-            )
-          ],
-        ),
-        body: Center(
-          child: FutureBuilder(
-              future: getData,
-              builder: (context, snapshot) => snapshot.hasData
-                  ? ListView(
-                      padding: const EdgeInsets.all(8),
-                      children: <Widget>[
-                          FlatButton(
-                            onPressed: () async {
-                              var response = await sendMail;
-                              if (response != null) {
-                                Scaffold.of(context).showSnackBar(SnackBar(
-                                  content: Text(response),
-                                ));
-                              }
-                            },
-                            child: Text("Send Email"),
-                          )
-                        ])
-                  : snapshot.hasError
-                      ? Text("An error occurred")
-                      : CircularProgressIndicator()),
-        ),
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: const <Widget>[
-              DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                ),
-                child: Text(
-                  'Drawer Header',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                  ),
-                ),
+  void showWelcomeMsg(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Registration Successful'),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Text('Welcome to Eduway.'),
+                  Text('Explore your new academic assistant'),
+                ],
               ),
-              ListTile(
-                leading: Icon(Icons.message),
-                title: Text('Messages'),
-              ),
-              ListTile(
-                leading: Icon(Icons.account_circle),
-                title: Text('Profile'),
-              ),
-              ListTile(
-                leading: Icon(Icons.settings),
-                title: Text('Settings'),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: Text('Get Started'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
               ),
             ],
-          ),
-        ),
-      ));
+          );
+        });
+  }
+
+  Widget build(BuildContext context) {
+    HomeScreenArguments args = ModalRoute.of(context).settings.arguments;
+
+    Future.delayed(
+        Duration.zero,
+        () => {
+              if (args != null && args.newUser == true)
+                {print('called'), showWelcomeMsg(context)}
+            });
+
+    return MaterialApp(
+        title: 'Home',
+        home: Scaffold(
+            appBar: AppBar(
+              backgroundColor: Colors.cyan,
+              title: Text("EduWay"),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.more_vert),
+                  onPressed: () {
+                    Navigator.of(context).pushNamed('/settings');
+                  },
+                )
+              ],
+            ),
+            body: Container(
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  children: <Widget>[
+                    GestureDetector(
+                      onTap: () => {
+                        Navigator.pushNamed(context, '/classrooms')
+                      },
+                      child: Card(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        color: Colors.indigo.shade500,
+                        elevation: 10.0,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children:<Widget>[
+                            ListTile(
+                              leading: Icon(Icons.assignment, color: Colors.white,),
+                              title: Text('Classrooms', style: TextStyle(color: Colors.white),),
+                            ),
+                            Container(
+                              padding: EdgeInsets.only(left: 15.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: <Widget>[
+                                  Text('Messages: 0', style: TextStyle(color: Colors.white60),),
+                                  IconButton(icon: Icon(Icons.arrow_forward_rounded, color: Colors.white,), onPressed: () => {
+
+                                  }),
+                                ],
+                              )
+                            ),
+                          ]
+                        ),
+                      ),
+                    ),
+                    Card(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      color: Colors.blue.shade500,
+                      elevation: 10.0,
+                      child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children:<Widget>[
+                            ListTile(
+                              leading: Icon(Icons.notification_important, color: Colors.white,),
+                              title: Text('Notifications', style: TextStyle(color: Colors.white),),
+                            ),
+                           
+                          ]
+                      ),
+                    )
+                  ]
+                )
+            )
+        )
+    );
+  }
 }
