@@ -48,12 +48,13 @@ class _MyHomePageState extends State<MyHomePage> {
         Duration.zero,
         () => {
               if (args != null && args.newUser == true)
-                {print('called'), showWelcomeMsg(context)}
+                {showWelcomeMsg(context)}
             });
 
     return MaterialApp(
         title: 'Home',
         home: Scaffold(
+            backgroundColor: const Color(0xffeeeeee),
             appBar: AppBar(
               backgroundColor: Colors.cyan,
               title: Text("EduWay"),
@@ -66,60 +67,105 @@ class _MyHomePageState extends State<MyHomePage> {
                 )
               ],
             ),
-            body: Container(
-                padding: EdgeInsets.all(8.0),
-                child: Column(
-                  children: <Widget>[
-                    GestureDetector(
-                      onTap: () => {
-                        Navigator.pushNamed(context, '/classrooms')
-                      },
-                      child: Card(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                        color: Colors.indigo.shade500,
-                        elevation: 10.0,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children:<Widget>[
-                            ListTile(
-                              leading: Icon(Icons.assignment, color: Colors.white,),
-                              title: Text('Classrooms', style: TextStyle(color: Colors.white),),
-                            ),
-                            Container(
-                              padding: EdgeInsets.only(left: 15.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: <Widget>[
-                                  Text('Messages: 0', style: TextStyle(color: Colors.white60),),
-                                  IconButton(icon: Icon(Icons.arrow_forward_rounded, color: Colors.white,), onPressed: () => {
-
-                                  }),
-                                ],
-                              )
-                            ),
-                          ]
-                        ),
-                      ),
-                    ),
-                    Card(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      color: Colors.blue.shade500,
-                      elevation: 10.0,
+            body: GridView.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                primary: false,
+                padding: const EdgeInsets.all(20),
+                children: <Widget>[
+                  GestureDetector(
+                    onTap: () => {Navigator.pushNamed(context, '/classrooms')},
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15)),
+                      color: Colors.white,
+                      elevation: 0,
                       child: Column(
                           mainAxisSize: MainAxisSize.min,
-                          children:<Widget>[
-                            ListTile(
-                              leading: Icon(Icons.notification_important, color: Colors.white,),
-                              title: Text('Notifications', style: TextStyle(color: Colors.white),),
-                            ),
-                           
-                          ]
-                      ),
-                    )
-                  ]
-                )
-            )
-        )
-    );
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Container(
+                                padding: EdgeInsets.only(left:15.0),
+                                child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.start,
+                                    children: <Widget>[
+                                      Icon(
+                                        Icons.assignment,
+                                        color: Colors.indigo.shade500,
+                                        size: 30.0,
+                                      ),
+                                    ])),
+                            Container(
+                                padding: EdgeInsets.only(left:15.0, top: 5.0),
+                                child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text('Classrooms', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    ])),
+                            Container(
+                                padding: EdgeInsets.only(top:15.0,left: 15.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(
+                                      'Messages: 0',
+                                      style: TextStyle(color: Colors.indigo),
+                                    ),
+                                  ],
+                                )),
+                          ]),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => {Navigator.pushNamed(context, '/notifications')},
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15)),
+                      color: Colors.white,
+                      elevation: 0,
+                      child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Container(
+                                padding: EdgeInsets.only(left:15.0),
+                                child: Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment.start,
+                                    children: <Widget>[
+                                      Icon(
+                                        Icons.notification_important,
+                                        color: Colors.blue.shade500,
+                                        size: 30.0,
+                                      ),
+                                    ])),
+                            Container(
+                                padding: EdgeInsets.only(left:15.0, top: 5.0),
+                                child: Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text('Notifications', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    ])),
+                            Container(
+                                padding: EdgeInsets.only(top:15.0,left: 15.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                  MainAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(
+                                      '5 Unread',
+                                      style: TextStyle(color: Colors.blue),
+                                    ),
+                                  ],
+                                )),
+                          ]),
+                    ),
+                  ),
+                ])));
   }
 }

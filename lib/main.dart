@@ -59,11 +59,9 @@ class MyApp extends StatelessWidget {
       });
 
       if (token != null) {
-        print(token);
         return true;
-      } else {
-        return null;
       }
+      return null;
     }
     return null;
   }
