@@ -6,7 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:email_validator/email_validator.dart';
 import '../../homeScreenArguments.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_signin_button/flutter_signin_button.dart';
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() {
@@ -27,27 +29,101 @@ class _LoginPageState extends State<LoginPage> {
             AlertDialog(title: Text(title), content: Text(text)),
       );
 
-  Future<String> attemptLogIn(String email, String password) async {
+  Future<Map> signInWithGoogle() async {
+    // Trigger the authentication flow
+    final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
+
+    // Obtain the auth details from the request
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+    // Create a new credential
+    final GoogleAuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    // Once signed in, return the UserCredential
+    UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+    if (userCredential != null && userCredential.user != null) {
+      var res = await http.post(
+        "$SERVER_IP/api/sanctum/token",
+        body: jsonEncode(<String, String>{
+          "uid": userCredential.user.uid,
+        }),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Accept': 'application/json; charset=UTF-8'
+        },
+      );
+      print(res.body);
+      if (res.statusCode == 200) {
+        return {
+          'success': true,
+          'user': userCredential.user,
+          'token': res.body
+        };
+      }
+      return {
+        'success': false,
+        'message': 'Something went Wrong'
+      };
+    }
+    return {
+      'success': false,
+      'message': 'Something went Wrong'
+    };
+  }
+
+  Future<Map> attemptLogIn(String email, String password) async {
     setState(() {
       showLoading = true;
     });
-    var res = await http.post(
-      "$SERVER_IP/api/sanctum/token",
-      body: jsonEncode(<String, String>{
-        "email": email,
-        "password": password,
-        'device_name': 'android'
-      }),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Accept': 'application/json; charset=UTF-8'
-      },
-    );
-    //print(res.body);
-    if (res.statusCode == 200) {
-      return res.body;
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password
+      );
+      if (userCredential != null && userCredential.user != null) {
+        var res = await http.post(
+          "$SERVER_IP/api/sanctum/token",
+          body: jsonEncode(<String, String>{
+            "uid": userCredential.user.uid,
+          }),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Accept': 'application/json; charset=UTF-8'
+          },
+        );
+        print(res.body);
+        if (res.statusCode == 200) {
+          return {
+            'success': true,
+            'user': userCredential.user,
+            'token': res.body
+          };
+        }
+        return {
+          'success': false,
+          'message': 'Something went Wrong'
+        };
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        return {
+          'success': false,
+          'message': 'No user found for that email.'
+        };
+      } else if (e.code == 'wrong-password') {
+        return {
+          'success': false,
+          'message': 'Wrong password provided for that user.'
+        };
+      }
     }
-    return null;
+    return {
+      'success': false,
+      'message': 'Something went Wrong'
+    };
   }
 
   @override
@@ -146,9 +222,9 @@ class _LoginPageState extends State<LoginPage> {
                               if (_formKey.currentState.validate()) {
                                 var email = _emailController.text;
                                 var password = _passwordController.text;
-                                var jwt = await attemptLogIn(email, password);
-                                if (jwt != null) {
-                                  storage.write(key: "jwt", value: jwt);
+                                var res = await attemptLogIn(email, password);
+                                if (res['success'] == true) {
+                                  storage.write(key: "jwt", value: res['token']);
                                   Navigator.of(context).pushNamedAndRemoveUntil(
                                       '/dashboard',
                                       (Route<dynamic> route) => false,
@@ -164,14 +240,45 @@ class _LoginPageState extends State<LoginPage> {
                                   setState(() {
                                     showLoading = false;
                                   });
-                                  Scaffold.of(context).showSnackBar(SnackBar(
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                     content:
-                                        Text('Email / password are incorrect'),
+                                        Text(res['message']),
                                   ));
                                 }
                               }
                             },
                             child: Text("Log In")),
+                        Center(child: Text('OR',style: TextStyle(color: Colors.white),),),
+                        SignInButton(
+                          Buttons.Google,
+                          onPressed: () async {
+                            FocusScope.of(context).unfocus();
+                            var res = await signInWithGoogle();
+                            if (res['success'] == true) {
+                              storage.write(key: "jwt", value: res['token']);
+                              Navigator.of(context).pushNamedAndRemoveUntil(
+                                  '/dashboard',
+                                      (Route<dynamic> route) => false,
+                                  arguments: HomeScreenArguments(false));
+
+                              /*
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => MyHomePage(jwt)));
+                            */
+                            } else {
+                              setState(() {
+                                showLoading = false;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                    Text(res['message']),
+                                  ));
+                            }
+                          },
+                        ),
                         Container(
                           margin: EdgeInsets.only(top: 12.0),
                           child: RichText(

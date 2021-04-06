@@ -1,34 +1,41 @@
 {
   "project_info": {
-    "project_number": "554414808317",
-    "firebase_url": "https://myughub-default-rtdb.firebaseio.com",
-    "project_id": "myughub",
-    "storage_bucket": "myughub.appspot.com"
+    "project_number": "75608816018",
+    "project_id": "eduway-9b99a",
+    "storage_bucket": "eduway-9b99a.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:554414808317:android:a41ecab7e608ff604ef294",
+        "mobilesdk_app_id": "1:75608816018:android:f213257c6fd830b899e94b",
         "android_client_info": {
-          "package_name": "com.example.flutter_myughub"
+          "package_name": "com.eduway"
         }
       },
       "oauth_client": [
         {
-          "client_id": "554414808317-ih5obfq0l0nsu1masnlmqp16g8i2fa22.apps.googleusercontent.com",
+          "client_id": "75608816018-m6don6mn6oo5t3pii4u1drl9l9g55lpg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.eduway",
+            "certificate_hash": "453b8aa2d66977143b2aad56be78bb8c82490287"
+          }
+        },
+        {
+          "client_id": "75608816018-3mt925pe0fitpe1v8k0irpv4fcjjpk7v.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAXFIQBcFQE4sGM2K2MtOGUYs9TBBu1k_g"
+          "current_key": "AIzaSyC0LdeJseHODoR_xlJ1Ur4FOu4f0IV2EZA"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "554414808317-ih5obfq0l0nsu1masnlmqp16g8i2fa22.apps.googleusercontent.com",
+              "client_id": "75608816018-3mt925pe0fitpe1v8k0irpv4fcjjpk7v.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

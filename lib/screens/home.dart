@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import '../baseConfig.dart';
-import 'package:http/http.dart' as http;
-import 'dart:io';
 import '../homeScreenArguments.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -56,11 +53,12 @@ class _MyHomePageState extends State<MyHomePage> {
         home: Scaffold(
             backgroundColor: const Color(0xffeeeeee),
             appBar: AppBar(
-              backgroundColor: Colors.cyan,
-              title: Text("EduWay"),
+              backgroundColor: const Color(0xffeeeeee),
+              elevation: 0,
+              title: Text("EduWay", style: TextStyle(color: Colors.black54),),
               actions: [
                 IconButton(
-                  icon: Icon(Icons.more_vert),
+                  icon: Icon(Icons.more_vert, color: Colors.black54,),
                   onPressed: () {
                     Navigator.of(context).pushNamed('/settings');
                   },
