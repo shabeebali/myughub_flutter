@@ -10,16 +10,27 @@ import 'screens/settings_page.dart';
 import 'screens/classrooms.dart';
 import 'screens/auth/register.dart';
 import 'package:firebase_core/firebase_core.dart';
-void main() => runApp(MyApp());
+import 'package:firebase_auth/firebase_auth.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  FirebaseAuth.instance
+      .authStateChanges()
+      .listen((User user) {
+    if (user == null) {
+      print('User is currently signed out!');
+
+    } else {
+      print(user);
+    }
+  });
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
-  Future get firebaseInit async {
-    await Firebase.initializeApp();
-  }
   Future<String> get jwtOrEmpty async {
     var jwt = await storage.read(key: "jwt");
-    // print('jwt obtained');
-    // print(jwt);
     if (jwt != null) {
       final response = await http.get(
         '$SERVER_IP/api/user',
@@ -30,14 +41,14 @@ class MyApp extends StatelessWidget {
         },
       );
       if (response.statusCode == 200) {
-        // print(response.body);
-        // If the server did return a 200 OK response,
-        // then parse the JSON.
-        return jwt;
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null)
+          return jwt;
+        return "";
       } else {
-        // If the server did not return a 200 OK response,
-        // then throw an exception.
-        // throw Exception('Failed jwt');
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null)
+          await FirebaseAuth.instance.signOut();
         return "";
       }
     } else
@@ -52,10 +63,10 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: FutureBuilder(
-          future: Future.wait([jwtOrEmpty, firebaseInit]),
+          future: jwtOrEmpty,
           builder: (context, snapshot) {
             if (!snapshot.hasData) return SplashScreen();
-            if (snapshot.data[0] != "") {
+            if (snapshot.data != "") {
               return MyHomePage();
             } else {
               return LoginPage();

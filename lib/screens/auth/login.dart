@@ -30,47 +30,77 @@ class _LoginPageState extends State<LoginPage> {
       );
 
   Future<Map> signInWithGoogle() async {
-    // Trigger the authentication flow
-    final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
+    // Trigger the interactive authentication flow
+    GoogleSignIn _googleSignIn = GoogleSignIn();
+    final GoogleSignInAccount googleUser = await _googleSignIn.signIn();
+    // Registering a Stream to watch signout function to get fired. If that happens trigger disconnect() of GoogleSignIn Class
+    // to make able the user choose account on login again
+    FirebaseAuth.instance
+        .authStateChanges()
+        .listen((User user) {
+      if (user == null) {
+        _googleSignIn.disconnect();
+      }
+    });
+    if(googleUser != null) {
+      setState(() {
+        showLoading = true;
+      });
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth = await googleUser
+          .authentication;
 
-    // Obtain the auth details from the request
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-    // Create a new credential
-    final GoogleAuthCredential credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    // Once signed in, return the UserCredential
-    UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-    if (userCredential != null && userCredential.user != null) {
-      var res = await http.post(
-        "$SERVER_IP/api/sanctum/token",
-        body: jsonEncode(<String, String>{
-          "uid": userCredential.user.uid,
-        }),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Accept': 'application/json; charset=UTF-8'
-        },
+      // Create a new credential
+      final GoogleAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
-      print(res.body);
-      if (res.statusCode == 200) {
+
+      // Once signed in, return the UserCredential
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithCredential(credential);
+      if (userCredential != null && userCredential.user != null) {
+        var res = await http.post(
+          "$SERVER_IP/api/auth/google/login",
+          body: jsonEncode(<String, String>{
+            "uid": userCredential.user.uid,
+            "email": userCredential.user.email,
+            "idToken": googleAuth.idToken
+          }),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Accept': 'application/json; charset=UTF-8'
+          },
+        );
+        setState(() {
+          showLoading = true;
+        });
+        Map<String, dynamic> body = jsonDecode(res.body);
+        if (res.statusCode == 200) {
+          return {
+            'success': true,
+            'oauth_user': userCredential.user,
+            'token': body['token'],
+            'user': body['user']
+          };
+        }
         return {
-          'success': true,
-          'user': userCredential.user,
-          'token': res.body
+          'success': false,
+          'message': 'Something went Wrong'
+        };
+      } else {
+        setState(() {
+          showLoading = true;
+        });
+        return {
+          'success': false,
+          'message': 'Something went Wrong'
         };
       }
-      return {
-        'success': false,
-        'message': 'Something went Wrong'
-      };
     }
     return {
       'success': false,
-      'message': 'Something went Wrong'
+      'message': 'Sign In Aborted'
     };
   }
 

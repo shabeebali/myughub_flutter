@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import '../baseConfig.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SettingsPage extends StatelessWidget {
   Future<String> attemptLogOut() async {
@@ -41,6 +42,7 @@ class SettingsPage extends StatelessWidget {
               onPressed: () async {
                 var response = await attemptLogOut();
                 if (response != null && response == 'success') {
+                  await FirebaseAuth.instance.signOut();
                   Navigator.of(context).pushNamedAndRemoveUntil(
                       '/login', (Route<dynamic> route) => false);
                 }
