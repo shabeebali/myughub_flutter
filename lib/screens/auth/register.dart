@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../baseConfig.dart';
 import 'package:http/http.dart' as http;
@@ -78,7 +79,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<String> registerUser(
-      String email, String password, String firstname, String lastname, String otp) async {
+      String email, String password, String firstname, String lastname) async {
     print(
         'start registration: email: $email, password: $password, firstname: $firstname, lastname: $lastname');
     var res = await http.post(
@@ -88,7 +89,6 @@ class _RegisterPageState extends State<RegisterPage> {
         "password": password,
         "fisrtname": firstname,
         "lastname": lastname,
-        "otp": otp,
         "device_name": "Android",
       }),
       headers: <String, String>{
@@ -96,8 +96,24 @@ class _RegisterPageState extends State<RegisterPage> {
         'Accept': 'application/json; charset=UTF-8'
       },
     );
+    print(res.body);
     if (res.statusCode == 200) {
-      return res.body;
+      print(res.body);
+      try {
+        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: email,
+            password: password
+        );
+        return res.body;
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'weak-password') {
+          print('The password provided is too weak.');
+        } else if (e.code == 'email-already-in-use') {
+          print('The account already exists for that email.');
+        }
+      } catch (e) {
+        print(e);
+      }
     }
     return null;
   }
@@ -143,113 +159,6 @@ class _RegisterPageState extends State<RegisterPage> {
         return alert;
       },
     );
-  }
-
-  _resentOtp(context) {
-    Navigator.pop(context);
-    showOtpBottomSheet(context);
-  }
-
-  showOtpBottomSheet(context) async {
-    FocusScope.of(context).unfocus();
-    var email = _emailController.text;
-    if (_formKey.currentState.validate()) {
-      DialogBuilder(context).showLoadingIndicator('');
-      var res = await sendMail(email);
-      if (res != null) {
-        DialogBuilder(context).hideOpenDialog();
-        Map<String, dynamic> data = jsonDecode(res);
-        if (data['status'] == 'EMAIL_SENT') {
-          // print('email sent successfully');
-          FocusScope.of(context).unfocus();
-          showModalBottomSheet<void>(
-            context: context,
-            isDismissible: true,
-            isScrollControlled: true,
-            builder: (BuildContext context) {
-              return Padding(
-                  padding: MediaQuery.of(context).viewInsets,
-                  child: Container(
-                    padding: EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                            'An OTP has been sent to ${_emailController.text}. Please enter OTP below.'),
-                        SizedBox(
-                          height: 16.0,
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 20.0),
-                          child: PinPut(
-                            fieldsCount: 4,
-                            onSubmit: (String otp) async {
-                              DialogBuilder(context)
-                                  .showLoadingIndicator('Verifying OTP');
-                              var password = _passwordController.text;
-                              var firstname = _firstnameController.text;
-                              var lastname = _lastnameController.text;
-                              var res3 = await registerUser(
-                                  email, password, firstname, lastname, otp);
-                              if (res3 != null) {
-                                Map<String, dynamic> data3 =
-                                    jsonDecode(res3);
-                                if (data3['message'] == 'success') {
-                                  storage.write(
-                                      key: "jwt", value: data3['token']);
-                                  Navigator.of(context)
-                                      .pushNamedAndRemoveUntil('/dashboard',
-                                          (Route<dynamic> route) => false,
-                                          arguments:
-                                              HomeScreenArguments(true));
-                                } else if (data3['status'] == 'INCORRECT_OTP') {
-                                  DialogBuilder(context).hideOpenDialog();
-                                  _pinPutController.text = '';
-                                  showAlertDialog(context, 'Alert', 'Incorrect OTP. Try Again');
-                                } else {
-                                DialogBuilder(context).hideOpenDialog();
-                                showAlertDialog(context, 'Alert',
-                                'Something went wrong. Try Again');
-                                }
-
-                              }
-                            },
-                            focusNode: _pinPutFocusNode,
-                            controller: _pinPutController,
-                            selectedFieldDecoration: _pinPutDecoration,
-                            followingFieldDecoration: _pinPutDecoration,
-                            submittedFieldDecoration: _pinPutDecoration,
-                          ),
-                        ),
-
-                        TimerButton(
-                          label: "Resend OTP",
-                          timeOutInSeconds: 30,
-                          onPressed: () {
-                            _resentOtp(context);
-                          },
-                          buttonType: ButtonType.FlatButton,
-                          color: Colors.white,
-                          activeTextStyle:
-                              TextStyle(color: Colors.blue.shade700),
-                        ),
-                        Text(
-                          'Note: Please check your email inbox as well as spam folder !!',
-                          style: TextStyle(color: Colors.amber.shade900),
-                        )
-                      ],
-                    ),
-                  ));
-            },
-          );
-        } else if (data['status'] == 'EMAIL_EXISTS') {
-          Scaffold.of(context).showSnackBar(SnackBar(
-            content: Text(data['message']),
-          ));
-        }
-      }
-    }
   }
 
   @override
@@ -328,15 +237,38 @@ class _RegisterPageState extends State<RegisterPage> {
                       height: 16.0,
                     ),
                     ElevatedButton(
-                      onPressed: () {
-                        showOtpBottomSheet(context);
+                      onPressed: () async {
+                        // showOtpBottomSheet(context);
+                        var password = _passwordController.text;
+                        var firstname = _firstnameController.text;
+                        var lastname = _lastnameController.text;
+                        var email = _emailController.text;
+                        var res = await registerUser(
+                            email, password, firstname, lastname);
+                        if (res != null) {
+                          Map<String, dynamic> data =
+                          jsonDecode(res);
+                          if (data['message'] == 'success') {
+                            storage.write(
+                                key: "jwt", value: data['token']);
+                            Navigator.of(context)
+                                .pushNamedAndRemoveUntil('/dashboard',
+                                    (Route<dynamic> route) => false,
+                                arguments:
+                                HomeScreenArguments(true));
+                          } else {
+                            DialogBuilder(context).hideOpenDialog();
+                            showAlertDialog(context, 'Alert',
+                                'Something went wrong. Try Again');
+                          }
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         onPrimary: Colors.white,
                         primary: Colors.cyan.shade500,
                         padding: EdgeInsets.symmetric(horizontal: 75.0),
                       ),
-                      child: Text('Next'),
+                      child: Text('Register'),
                     ),
                   ],
                 )),

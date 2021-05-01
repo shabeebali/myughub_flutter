@@ -17,11 +17,12 @@ Future<void> main() async {
   await Firebase.initializeApp();
   FirebaseAuth.instance
       .authStateChanges()
-      .listen((User user) {
+      .listen((User user) async {
     if (user == null) {
-      print('User is currently signed out!');
-
     } else {
+      if (!user.emailVerified) {
+        await user.sendEmailVerification();
+      }
       print(user);
     }
   });
