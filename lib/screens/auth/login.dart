@@ -37,7 +37,7 @@ class _LoginPageState extends State<LoginPage> {
     // to make able the user choose account on login again
     FirebaseAuth.instance
         .authStateChanges()
-        .listen((User user) {
+        .listen((User user) async {
       if (user == null) {
         _googleSignIn.disconnect();
       }
@@ -49,9 +49,8 @@ class _LoginPageState extends State<LoginPage> {
       // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth = await googleUser
           .authentication;
-
       // Create a new credential
-      final GoogleAuthCredential credential = GoogleAuthProvider.credential(
+      final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
@@ -60,12 +59,11 @@ class _LoginPageState extends State<LoginPage> {
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithCredential(credential);
       if (userCredential != null && userCredential.user != null) {
+        var tokId = await FirebaseAuth.instance.currentUser.getIdToken();
         var res = await http.post(
-          "$SERVER_IP/api/auth/google/login",
+          "$SERVER_IP/api/sanctum/token",
           body: jsonEncode(<String, String>{
-            "uid": userCredential.user.uid,
-            "email": userCredential.user.email,
-            "idToken": googleAuth.idToken
+            "idToken": tokId
           }),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
@@ -114,22 +112,23 @@ class _LoginPageState extends State<LoginPage> {
           password: password
       );
       if (userCredential != null && userCredential.user != null) {
+        var idToken = await userCredential.user.getIdToken();
         var res = await http.post(
           "$SERVER_IP/api/sanctum/token",
           body: jsonEncode(<String, String>{
-            "uid": userCredential.user.uid,
+            "idToken": idToken,
           }),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Accept': 'application/json; charset=UTF-8'
           },
         );
-        print(res.body);
+        Map<String, dynamic> body = jsonDecode(res.body);
         if (res.statusCode == 200) {
           return {
             'success': true,
-            'user': userCredential.user,
-            'token': res.body
+            'token': body['token'],
+            'user': body['user']
           };
         }
         return {
@@ -230,7 +229,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             style: TextStyle(height: 1),
                             validator: (value) {
-                              if (value.isEmpty) {
+                              if (value!.isEmpty) {
                                 return 'Please enter password';
                               }
                               return null;
@@ -249,7 +248,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             onPressed: () async {
                               FocusScope.of(context).unfocus();
-                              if (_formKey.currentState.validate()) {
+                              if (_formKey.currentState!.validate()) {
                                 var email = _emailController.text;
                                 var password = _passwordController.text;
                                 var res = await attemptLogIn(email, password);
@@ -286,10 +285,16 @@ class _LoginPageState extends State<LoginPage> {
                             var res = await signInWithGoogle();
                             if (res['success'] == true) {
                               storage.write(key: "jwt", value: res['token']);
-                              Navigator.of(context).pushNamedAndRemoveUntil(
-                                  '/dashboard',
-                                      (Route<dynamic> route) => false,
-                                  arguments: HomeScreenArguments(false));
+                              if(FirebaseAuth.instance.currentUser.emailVerified == false)
+                                Navigator.of(context).pushNamedAndRemoveUntil(
+                                    '/verify_email',
+                                        (Route<dynamic> route) => false,
+                                );
+                              else
+                                Navigator.of(context).pushNamedAndRemoveUntil(
+                                    '/dashboard',
+                                        (Route<dynamic> route) => false,
+                                    arguments: HomeScreenArguments(false));
 
                               /*
                             Navigator.push(

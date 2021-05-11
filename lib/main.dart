@@ -1,4 +1,6 @@
+// @dart=2.9
 import 'package:flutter/material.dart';
+import 'package:flutter_myughub/screens/Classrooms/view.dart';
 // import 'init.dart';
 import 'splash.dart';
 import 'screens/home.dart';
@@ -8,6 +10,8 @@ import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'screens/settings_page.dart';
 import 'screens/classrooms.dart';
+import 'screens/Classrooms/create.dart';
+import 'screens/verify_email.dart';
 import 'screens/auth/register.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -15,17 +19,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  FirebaseAuth.instance
-      .authStateChanges()
-      .listen((User user) async {
-    if (user == null) {
-    } else {
-      if (!user.emailVerified) {
-        await user.sendEmailVerification();
-      }
-      print(user);
-    }
-  });
   runApp(MyApp());
 }
 
@@ -68,6 +61,9 @@ class MyApp extends StatelessWidget {
           builder: (context, snapshot) {
             if (!snapshot.hasData) return SplashScreen();
             if (snapshot.data != "") {
+              print('Email Verified: ${FirebaseAuth.instance.currentUser.emailVerified}');
+              if(FirebaseAuth.instance.currentUser.emailVerified == false)
+                return VerifyEmail();
               return MyHomePage();
             } else {
               return LoginPage();
@@ -78,7 +74,10 @@ class MyApp extends StatelessWidget {
         '/dashboard': (BuildContext context) => new MyHomePage(),
         '/settings': (BuildContext context) => new SettingsPage(),
         '/register': (BuildContext context) => new RegisterPage(),
-        '/classrooms': (BuildContext context) => new Classrooms(),
+        '/classrooms': (BuildContext context) => new ClassroomsIndex(),
+        '/classroom_create': (BuildContext context) => new CreateClassroom(),
+        '/verify_email': (BuildContext context) => new VerifyEmail(),
+        '/classroom' : (BuildContext context) => new ViewClassroom(),
       },
     );
   }

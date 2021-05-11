@@ -5,7 +5,7 @@ class DialogBuilder {
 
   final BuildContext context;
 
-  void showLoadingIndicator([String text]) {
+  void showLoadingIndicator([String? text]) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -16,7 +16,7 @@ class DialogBuilder {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(Radius.circular(8.0))),
               backgroundColor: Colors.black87,
-              content: LoadingIndicator(text: text),
+              content: LoadingIndicator(text: text!),
             ));
       },
     );

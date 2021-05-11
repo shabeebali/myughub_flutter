@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SettingsPage extends StatelessWidget {
-  Future<String> attemptLogOut() async {
+  Future<String?> attemptLogOut() async {
     var jwt = await storage.read(key: "jwt");
     var res = await http.get(
       "$SERVER_IP/api/sanctum/logout",
@@ -37,7 +37,7 @@ class SettingsPage extends StatelessWidget {
           width: double.infinity,
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 10.0),
-            child: OutlineButton(
+            child: OutlinedButton(
               child: Text('Logout'),
               onPressed: () async {
                 var response = await attemptLogOut();

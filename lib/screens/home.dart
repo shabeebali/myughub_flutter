@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../homeScreenArguments.dart';
 class MyHomePage extends StatefulWidget {
@@ -40,7 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget build(BuildContext context) {
-    HomeScreenArguments args = ModalRoute.of(context).settings.arguments;
+    HomeScreenArguments args = ModalRoute.of(context)!.settings.arguments as HomeScreenArguments;
 
     Future.delayed(
         Duration.zero,
@@ -49,9 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 {showWelcomeMsg(context)}
             });
 
-    return MaterialApp(
-        title: 'Home',
-        home: Scaffold(
+        return Scaffold(
             backgroundColor: const Color(0xffeeeeee),
             appBar: AppBar(
               backgroundColor: const Color(0xffeeeeee),
@@ -66,7 +65,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 )
               ],
             ),
-            body: GridView.count(
+            body: WillPopScope(
+              child:GridView.count(
                 crossAxisCount: 2,
                 mainAxisSpacing: 10,
                 crossAxisSpacing: 10,
@@ -120,7 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => {Navigator.pushNamed(context, '/notifications')},
+                    onTap: () => {},
                     child: Card(
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15)),
@@ -148,7 +148,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     mainAxisAlignment:
                                     MainAxisAlignment.start,
                                     children: <Widget>[
-                                      Text('Notifications', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                      Text('Notice Board', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                     ])),
                             Container(
                                 padding: EdgeInsets.only(top:15.0,left: 15.0),
@@ -157,7 +157,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   MainAxisAlignment.start,
                                   children: <Widget>[
                                     Text(
-                                      '5 Unread',
+                                      'Coming Soom',
                                       style: TextStyle(color: Colors.blue),
                                     ),
                                   ],
@@ -165,6 +165,26 @@ class _MyHomePageState extends State<MyHomePage> {
                           ]),
                     ),
                   ),
-                ])));
+                ]
+              ),
+              onWillPop: onWillPop,
+            )
+        );
+
+  }
+  DateTime? currentBackPressTime;
+  Future<bool> onWillPop() {
+    DateTime now = DateTime.now();
+    if (currentBackPressTime == null ||
+        now.difference(currentBackPressTime!) > Duration(seconds: 2)) {
+      currentBackPressTime = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+            Text('Press back again to exit'),
+          ));
+      return Future.value(false);
+    }
+    return Future.value(true);
   }
 }

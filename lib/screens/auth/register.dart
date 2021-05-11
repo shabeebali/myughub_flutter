@@ -5,8 +5,6 @@ import '../../baseConfig.dart';
 import 'package:http/http.dart' as http;
 import 'package:email_validator/email_validator.dart';
 import '../../loadingIndicator.dart';
-import 'package:pinput/pin_put/pin_put.dart';
-import 'package:timer_button/timer_button.dart';
 import '../../homeScreenArguments.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -21,14 +19,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  final FocusNode _pinPutFocusNode = FocusNode();
-  final TextEditingController _pinPutController = TextEditingController();
-  BoxDecoration get _pinPutDecoration {
-    return BoxDecoration(
-      border: Border.all(color: Colors.deepPurpleAccent),
-      borderRadius: BorderRadius.circular(15.0),
-    );
-  }
 
   bool _obscureText = true;
   void _toggle() {
@@ -56,38 +46,14 @@ class _RegisterPageState extends State<RegisterPage> {
         hasMinLength;
   }
 
-  Future<String> sendMail(String email) async {
-    /*
-      await Future.delayed(Duration(seconds: 1));
-      return 'yes';
-      */
-
-    var res = await http.post(
-      "$SERVER_IP/api/email_otp",
-      body: jsonEncode(<String, String>{
-        "email": email,
-      }),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Accept': 'application/json; charset=UTF-8'
-      },
-    );
-    if (res.statusCode == 200) {
-      return res.body;
-    }
-    return null;
-  }
-
-  Future<String> registerUser(
+  Future<String?> registerUser(
       String email, String password, String firstname, String lastname) async {
-    print(
-        'start registration: email: $email, password: $password, firstname: $firstname, lastname: $lastname');
     var res = await http.post(
       "$SERVER_IP/api/register",
       body: jsonEncode(<String, String>{
         "email": email,
         "password": password,
-        "fisrtname": firstname,
+        "firstname": firstname,
         "lastname": lastname,
         "device_name": "Android",
       }),
@@ -96,29 +62,16 @@ class _RegisterPageState extends State<RegisterPage> {
         'Accept': 'application/json; charset=UTF-8'
       },
     );
-    print(res.body);
     if (res.statusCode == 200) {
       print(res.body);
-      try {
-        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email: email,
-            password: password
-        );
-        return res.body;
-      } on FirebaseAuthException catch (e) {
-        if (e.code == 'weak-password') {
-          print('The password provided is too weak.');
-        } else if (e.code == 'email-already-in-use') {
-          print('The account already exists for that email.');
-        }
-      } catch (e) {
-        print(e);
-      }
+      await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+      return res.body;
     }
     return null;
   }
 
-  void showLoadingIndicator([String text]) {
+  void showLoadingIndicator([String? text]) {
     showDialog(
         context: context,
         barrierDismissible: false,
@@ -129,7 +82,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(8.0))),
                 backgroundColor: Colors.black87,
-                content: LoadingIndicator(text: text),
+                content: LoadingIndicator(text: text!),
               ));
         });
   }
@@ -230,7 +183,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: const Icon(Icons.lock)),
                         ),
                         controller: _passwordController,
-                        validator: (val) => !isPasswordCompliant(val)
+                        validator: (val) => !isPasswordCompliant(val!)
                             ? 'Password should contain atleast 6 characters, one uppercase, one lowercase, one digit and one special character.'
                             : null),
                     SizedBox(
@@ -238,28 +191,39 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        // showOtpBottomSheet(context);
-                        var password = _passwordController.text;
-                        var firstname = _firstnameController.text;
-                        var lastname = _lastnameController.text;
-                        var email = _emailController.text;
-                        var res = await registerUser(
-                            email, password, firstname, lastname);
-                        if (res != null) {
-                          Map<String, dynamic> data =
-                          jsonDecode(res);
-                          if (data['message'] == 'success') {
-                            storage.write(
-                                key: "jwt", value: data['token']);
-                            Navigator.of(context)
-                                .pushNamedAndRemoveUntil('/dashboard',
-                                    (Route<dynamic> route) => false,
-                                arguments:
-                                HomeScreenArguments(true));
-                          } else {
-                            DialogBuilder(context).hideOpenDialog();
-                            showAlertDialog(context, 'Alert',
-                                'Something went wrong. Try Again');
+                        if (_formKey.currentState!.validate()) {
+                          showLoadingIndicator('');
+                          // showOtpBottomSheet(context);
+                          var password = _passwordController.text;
+                          var firstname = _firstnameController.text;
+                          var lastname = _lastnameController.text;
+                          var email = _emailController.text;
+                          var res = await registerUser(
+                              email, password, firstname, lastname);
+                          if (res != null) {
+                            Map<String, dynamic> data = jsonDecode(res);
+                            if (data['message'] == 'success') {
+                              storage.write(key: "jwt", value: data['token']);
+                              await FirebaseAuth.instance.currentUser.reload();
+                              Navigator.of(context).pushNamedAndRemoveUntil(
+                                '/verify_email',
+                                (Route<dynamic> route) => false,
+                              );
+                              /*
+                              Navigator.of(context).pushNamedAndRemoveUntil(
+                                  '/dashboard', (Route<dynamic> route) => false,
+                                  arguments: HomeScreenArguments(true));
+
+                               */
+                            } else if (data.containsKey('message')) {
+                              DialogBuilder(context).hideOpenDialog();
+                              showAlertDialog(
+                                  context, 'Alert', data['message']);
+                            } else {
+                              DialogBuilder(context).hideOpenDialog();
+                              showAlertDialog(context, 'Alert',
+                                  'Something went wrong. Try Again');
+                            }
                           }
                         }
                       },
@@ -276,3 +240,4 @@ class _RegisterPageState extends State<RegisterPage> {
         }));
   }
 }
+
