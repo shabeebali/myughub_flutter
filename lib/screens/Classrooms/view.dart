@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_myughub/Models/ClassroomModel.dart';
-import 'package:flutter_myughub/Models/UserModel.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../../Models/ClassroomModel.dart';
+import '../../Models/UserModel.dart';
+import '../../screens/Classrooms/lectures.dart';
 
 import '../../baseConfig.dart';
 import 'package:http/http.dart' as http;
@@ -32,10 +32,10 @@ class ViewClassroomState extends State<ViewClassroom> {
     loadClassroom();
   }
   Future<bool> loadClassroom() async {
-    jwt = await storage.read(key: "jwt");
+    jwt = (await storage.read(key: "jwt"))!;
 
     final response = await http.get(
-      '$SERVER_IP/api/classrooms/${widget.id}',
+      Uri.parse('$SERVER_IP/api/classrooms/${widget.id}'),
       headers: {
         'Content-Type': 'application/json; charset=UTF-8',
         'Accept': 'application/json; charset=UTF-8',
@@ -59,7 +59,7 @@ class ViewClassroomState extends State<ViewClassroom> {
             )
         );
       });
-      if( FirebaseAuth.instance.currentUser.uid == model!.created_by.uid ) {
+      if( FirebaseAuth.instance.currentUser!.uid == model!.created_by.uid ) {
         setState(() {
           invitationRequestVisible = true;
         });
@@ -87,7 +87,9 @@ class ViewClassroomState extends State<ViewClassroom> {
           padding: const EdgeInsets.all(20),
           children: <Widget>[
             GestureDetector(
-              onTap: () => {Navigator.pushNamed(context, '/classrooms')},
+              onTap: () => {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => Lectures(id: model!.id)))
+              },
               child: Card(
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15)),

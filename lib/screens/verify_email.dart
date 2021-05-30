@@ -23,7 +23,7 @@ class _VerifyEmailState extends State<VerifyEmail> {
         ),
         body: Builder(
           builder: (BuildContext context) {
-            var email = FirebaseAuth.instance.currentUser.email;
+            var email = FirebaseAuth.instance.currentUser!.email;
             return Material(
               child: Container(
                 padding: EdgeInsets.all(16.0),
@@ -54,9 +54,9 @@ class _VerifyEmailState extends State<VerifyEmail> {
                                 color: Colors.white,
                                 onPressed: () async {
                                   var db = new DialogBuilder(context);
-                                  db.showLoadingIndicator('');
-                                  await FirebaseAuth.instance.currentUser.reload();
-                                  if(FirebaseAuth.instance.currentUser.emailVerified == true) {
+                                  db.showLoadingIndicator();
+                                  await FirebaseAuth.instance.currentUser!.reload();
+                                  if(FirebaseAuth.instance.currentUser!.emailVerified == true) {
                                     Navigator.of(context).pushNamedAndRemoveUntil(
                                         '/dashboard', (Route<dynamic> route) => false,
                                         arguments: HomeScreenArguments(true));

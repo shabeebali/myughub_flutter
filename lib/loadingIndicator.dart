@@ -5,7 +5,7 @@ class DialogBuilder {
 
   final BuildContext context;
 
-  void showLoadingIndicator([String? text]) {
+  void showLoadingIndicator({String? text = ''}) {
     showDialog(
       context: context,
       barrierDismissible: false,

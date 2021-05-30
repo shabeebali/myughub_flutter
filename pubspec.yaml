@@ -1,4 +1,4 @@
-name: flutter_myughub
+name: eduway
 description: A new Flutter project.
 
 # The following line prevents the package from being accidentally published to
@@ -23,25 +23,24 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^0.12.2
-  firebase_core: "^0.7.0"
-  firebase_auth: "^0.20.1"
-  firebase_messaging: "^8.0.0-dev.14"
-  flutter_secure_storage: ^3.3.1+1
-  email_validator: '^1.0.5'
-  pinput: ^1.0.0
-  timer_button: ^1.0.1
-  flutter_local_notifications: ^4.0.1
-  loading_overlay: ^0.2.1
-  badges: ^1.2.0
-  provider: ^4.3.3
-  google_sign_in: ^4.5.1
+  http: ^0.13.3
+  firebase_core: "^1.1.1"
+  firebase_auth: ^1.1.4
+  firebase_messaging: "^9.1.4"
+  flutter_secure_storage: ^4.2.0
+  email_validator: '^2.0.1'
+  flutter_local_notifications: ^5.0.0+4
+  loading_overlay: ^0.3.0
+  badges: ^2.0.1
+  provider: ^5.0.0
+  google_sign_in: ^5.0.3
   flutter_signin_button: ^2.0.0
   dropdown_search: 0.6.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.0
+  youtube_player_flutter: ^8.0.0
 
 dev_dependencies:
   flutter_test:

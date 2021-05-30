@@ -11,7 +11,7 @@ class SettingsPage extends StatelessWidget {
   Future<String?> attemptLogOut() async {
     var jwt = await storage.read(key: "jwt");
     var res = await http.get(
-      "$SERVER_IP/api/sanctum/logout",
+      Uri.parse("$SERVER_IP/api/sanctum/logout"),
       headers: {
         'Content-Type': 'application/json; charset=UTF-8',
         'Accept': 'application/json; charset=UTF-8',

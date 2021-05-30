@@ -3,8 +3,9 @@ import 'dart:io';
 
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_myughub/Models/InstitutionModel.dart';
-import 'package:flutter_myughub/Models/UniversityModel.dart';
+import 'package:flutter/rendering.dart';
+import '../../Models/InstitutionModel.dart';
+import '../../Models/UniversityModel.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 
 import '../../baseConfig.dart';
@@ -14,7 +15,6 @@ class CreateClassroom extends StatefulWidget {
   @override
   CreateClassroomState createState() => CreateClassroomState();
 }
-
 class CreateClassroomState extends State<CreateClassroom> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController subjectController = TextEditingController();
@@ -33,25 +33,22 @@ class CreateClassroomState extends State<CreateClassroom> {
 
   bool _universityClearable = true;
 
+  String? joinMethod = 'approve';
+
   final _formKey = GlobalKey<FormState>();
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     initFn();
-    institutionController.addListener(() {
-      print(institutionController.text);
-    });
-    print(institutionController.text);
   }
 
   Future initFn() async {
     setState(() {
       this.loading = true;
     });
-    this.jwt = await storage.read(key: "jwt");
+    this.jwt = (await storage.read(key: "jwt"))!;
     var res = await Future.wait([
       loadInstitutions(),
       loadUniversities()
@@ -65,7 +62,7 @@ class CreateClassroomState extends State<CreateClassroom> {
 
   Future<bool> loadUniversities() async {
     final response = await http.get(
-      '$SERVER_IP/api/universities',
+      Uri.parse('$SERVER_IP/api/universities'),
       headers: {
         'Content-Type': 'application/json; charset=UTF-8',
         'Accept': 'application/json; charset=UTF-8',
@@ -86,7 +83,7 @@ class CreateClassroomState extends State<CreateClassroom> {
 
   Future<bool> loadInstitutions() async {
     final response = await http.get(
-      '$SERVER_IP/api/institutions',
+      Uri.parse('$SERVER_IP/api/institutions'),
       headers: {
         'Content-Type': 'application/json; charset=UTF-8',
         'Accept': 'application/json; charset=UTF-8',
@@ -123,6 +120,8 @@ class CreateClassroomState extends State<CreateClassroom> {
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 16.0),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: 10),
                         TextFormField(
@@ -199,40 +198,70 @@ class CreateClassroomState extends State<CreateClassroom> {
                           },
                         ),
                         SizedBox(height: 10),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            primary: Colors.cyan,
-                          ),
-                          child: Text('Create'),
-                          onPressed: () async {
-                            if(_formKey.currentState!.validate()) {
-                              FocusScope.of(context).unfocus();
+                        Text('Join Method ?', style: TextStyle(fontWeight: FontWeight.bold)),
+                        SizedBox(height: 5.0,),
+                        ListTile(
+                          title: Text('Anyone with code can join'),
+                          leading: Radio(
+                            value: 'anyone',
+                            groupValue: joinMethod,
+                            onChanged:  (String? value) {
                               setState(() {
-                                loading = true;
+                                joinMethod = value;
                               });
-                              var res = await http.post(
-                                '$SERVER_IP/api/classrooms',
-                                headers: {
-                                  'Content-Type': 'application/json; charset=UTF-8',
-                                  'Accept': 'application/json; charset=UTF-8',
-                                  HttpHeaders.authorizationHeader: "Bearer ${this.jwt}"
-                                },
-                                body: jsonEncode({
-                                  'name' : nameController.text,
-                                  'subject': subjectController.text,
-                                  'institution_id' : int.parse(institutionController.text),
-                                })
-                              );
-                              if (res.statusCode == 200) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content:
-                                      Text('Classroom Created Successfully'),
-                                    ));
-                                Navigator.pop(context);
+                            },
+                          ),
+                        ),
+                        ListTile(
+                          title: Text('Join on approval'),
+                          leading: Radio(
+                            value: 'approve',
+                            groupValue: joinMethod,
+                            onChanged:  (String? value) {
+                              setState(() {
+                                joinMethod = value;
+                              });
+                            },
+                          ),
+                        ),
+                        Center( child:
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              primary: Colors.cyan,
+                            ),
+                            child: Text('Create'),
+                            onPressed: () async {
+                              if(_formKey.currentState!.validate()) {
+                                FocusScope.of(context).unfocus();
+                                setState(() {
+                                  loading = true;
+                                });
+                                var res = await http.post(
+                                  Uri.parse('$SERVER_IP/api/classrooms'),
+                                  headers: {
+                                    'Content-Type': 'application/json; charset=UTF-8',
+                                    'Accept': 'application/json; charset=UTF-8',
+                                    HttpHeaders.authorizationHeader: "Bearer ${this.jwt}"
+                                  },
+                                  body: jsonEncode({
+                                    'name' : nameController.text,
+                                    'subject': subjectController.text,
+                                    'institution_id' : int.parse(institutionController.text),
+                                    'university_id' : int.parse(universityController.text),
+                                    'join_method' : joinMethod
+                                  })
+                                );
+                                if (res.statusCode == 200) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content:
+                                        Text('Classroom Created Successfully'),
+                                      ));
+                                  Navigator.pop(context);
+                                }
                               }
-                            }
-                          },
+                            },
+                          )
                         )
                       ],
                     ),

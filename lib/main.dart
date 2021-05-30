@@ -1,6 +1,4 @@
-// @dart=2.9
 import 'package:flutter/material.dart';
-import 'package:flutter_myughub/screens/Classrooms/view.dart';
 // import 'init.dart';
 import 'splash.dart';
 import 'screens/home.dart';
@@ -27,7 +25,7 @@ class MyApp extends StatelessWidget {
     var jwt = await storage.read(key: "jwt");
     if (jwt != null) {
       final response = await http.get(
-        '$SERVER_IP/api/user',
+        Uri.parse('$SERVER_IP/api/user'),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
           'Accept': 'application/json; charset=UTF-8',
@@ -61,8 +59,8 @@ class MyApp extends StatelessWidget {
           builder: (context, snapshot) {
             if (!snapshot.hasData) return SplashScreen();
             if (snapshot.data != "") {
-              print('Email Verified: ${FirebaseAuth.instance.currentUser.emailVerified}');
-              if(FirebaseAuth.instance.currentUser.emailVerified == false)
+              print('Email Verified: ${FirebaseAuth.instance.currentUser!.emailVerified}');
+              if(FirebaseAuth.instance.currentUser!.emailVerified == false)
                 return VerifyEmail();
               return MyHomePage();
             } else {
@@ -77,7 +75,6 @@ class MyApp extends StatelessWidget {
         '/classrooms': (BuildContext context) => new ClassroomsIndex(),
         '/classroom_create': (BuildContext context) => new CreateClassroom(),
         '/verify_email': (BuildContext context) => new VerifyEmail(),
-        '/classroom' : (BuildContext context) => new ViewClassroom(),
       },
     );
   }

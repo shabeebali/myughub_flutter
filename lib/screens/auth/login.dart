@@ -32,12 +32,12 @@ class _LoginPageState extends State<LoginPage> {
   Future<Map> signInWithGoogle() async {
     // Trigger the interactive authentication flow
     GoogleSignIn _googleSignIn = GoogleSignIn();
-    final GoogleSignInAccount googleUser = await _googleSignIn.signIn();
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
     // Registering a Stream to watch signout function to get fired. If that happens trigger disconnect() of GoogleSignIn Class
     // to make able the user choose account on login again
     FirebaseAuth.instance
         .authStateChanges()
-        .listen((User user) async {
+        .listen((User? user) async {
       if (user == null) {
         _googleSignIn.disconnect();
       }
@@ -59,9 +59,9 @@ class _LoginPageState extends State<LoginPage> {
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithCredential(credential);
       if (userCredential != null && userCredential.user != null) {
-        var tokId = await FirebaseAuth.instance.currentUser.getIdToken();
+        var tokId = await FirebaseAuth.instance.currentUser!.getIdToken();
         var res = await http.post(
-          "$SERVER_IP/api/sanctum/token",
+          Uri.parse("$SERVER_IP/api/sanctum/token"),
           body: jsonEncode(<String, String>{
             "idToken": tokId
           }),
@@ -112,9 +112,9 @@ class _LoginPageState extends State<LoginPage> {
           password: password
       );
       if (userCredential != null && userCredential.user != null) {
-        var idToken = await userCredential.user.getIdToken();
+        var idToken = await userCredential.user!.getIdToken();
         var res = await http.post(
-          "$SERVER_IP/api/sanctum/token",
+          Uri.parse("$SERVER_IP/api/sanctum/token"),
           body: jsonEncode(<String, String>{
             "idToken": idToken,
           }),
@@ -203,7 +203,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             style: TextStyle(height: 1),
                             validator: (val) =>
-                                !EmailValidator.validate(val, true)
+                                !EmailValidator.validate(val!, true)
                                     ? 'Not a valid email.'
                                     : null,
                           ),
@@ -285,7 +285,7 @@ class _LoginPageState extends State<LoginPage> {
                             var res = await signInWithGoogle();
                             if (res['success'] == true) {
                               storage.write(key: "jwt", value: res['token']);
-                              if(FirebaseAuth.instance.currentUser.emailVerified == false)
+                              if(FirebaseAuth.instance.currentUser!.emailVerified == false)
                                 Navigator.of(context).pushNamedAndRemoveUntil(
                                     '/verify_email',
                                         (Route<dynamic> route) => false,

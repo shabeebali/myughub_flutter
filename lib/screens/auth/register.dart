@@ -49,7 +49,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<String?> registerUser(
       String email, String password, String firstname, String lastname) async {
     var res = await http.post(
-      "$SERVER_IP/api/register",
+      Uri.parse("$SERVER_IP/api/register"),
       body: jsonEncode(<String, String>{
         "email": email,
         "password": password,
@@ -156,7 +156,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     TextFormField(
                       autovalidateMode: AutovalidateMode.disabled,
-                      validator: (val) => !EmailValidator.validate(val, true)
+                      validator: (val) => !EmailValidator.validate(val!, true)
                           ? 'Not a valid email.'
                           : null,
                       decoration: InputDecoration(
@@ -204,7 +204,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             Map<String, dynamic> data = jsonDecode(res);
                             if (data['message'] == 'success') {
                               storage.write(key: "jwt", value: data['token']);
-                              await FirebaseAuth.instance.currentUser.reload();
+                              await FirebaseAuth.instance.currentUser!.reload();
                               Navigator.of(context).pushNamedAndRemoveUntil(
                                 '/verify_email',
                                 (Route<dynamic> route) => false,
